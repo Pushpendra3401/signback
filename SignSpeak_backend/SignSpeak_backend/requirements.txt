@@ -1,0 +1,32 @@
+# SignSpeak Backend – Python Dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+# Core web framework
+Flask==3.0.3
+Werkzeug==3.0.3
+
+# Firebase / GCP
+firebase-admin==6.5.0
+google-cloud-storage==2.16.0
+google-cloud-firestore==2.16.0
+
+# Computer vision & AI
+mediapipe==0.10.30
+opencv-python-headless==4.10.0.84
+deepface==0.0.93
+tf-keras>=2.16.0               # required by deepface
+numpy>=1.24,<2.0
+
+# Text-to-Speech
+pyttsx3==2.90
+gTTS==2.5.1
+
+# Security / auth
+PyJWT==2.8.0
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.32.3
+
+gunicorn==22.0.0
+Flask-Cors==4.0.1
+

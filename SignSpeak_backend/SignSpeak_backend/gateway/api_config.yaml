@@ -1,0 +1,13 @@
+name: signspeak-api
+version: 1
+routes:
+  - path: /token/**
+    backend_url: http://token-server:8080
+    auth: firebase
+  - path: /ai/**
+    backend_url: http://ai-server:8081
+    auth: firebase
+cors:
+  allow_origin: "*"
+  allow_methods: ["GET","POST","OPTIONS"]
+  allow_headers: ["Authorization","Content-Type"]

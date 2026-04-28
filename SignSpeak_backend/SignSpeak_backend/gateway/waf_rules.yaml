@@ -1,0 +1,7 @@
+rules:
+  - id: rate-limit
+    action: throttle
+    limit_per_minute: 60
+  - id: block-bad-methods
+    action: deny
+    methods: ["TRACE","TRACK"]

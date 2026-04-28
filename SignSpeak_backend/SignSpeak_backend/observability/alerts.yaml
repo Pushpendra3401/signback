@@ -1,0 +1,67 @@
+alerts:
+  # ── Token Server Alerts ────────────────────────────────────────────────────
+  - name: token-server-5xx
+    description: "Token server HTTP 5xx error rate exceeds 5%"
+    condition: "http_server_error_rate{service='token-server'} > 0.05"
+    severity: critical
+    for: 2m
+    notify: [pagerduty, slack-critical]
+
+  - name: token-server-latency-p95
+    description: "Token server p95 latency exceeds 500ms"
+    condition: "http_request_duration_p95{service='token-server'} > 500"
+    severity: warning
+    for: 5m
+    notify: [slack-warning]
+
+  - name: token-server-too-many-401s
+    description: "High authentication failure rate on token server"
+    condition: "http_401_rate{service='token-server'} > 0.1"
+    severity: warning
+    for: 3m
+    notify: [slack-warning]
+
+  # ── AI Server Alerts ───────────────────────────────────────────────────────
+  - name: ai-server-5xx
+    description: "AI server HTTP 5xx error rate exceeds 5%"
+    condition: "http_server_error_rate{service='ai-server'} > 0.05"
+    severity: critical
+    for: 2m
+    notify: [pagerduty, slack-critical]
+
+  - name: ai-server-latency-p95
+    description: "AI server p95 latency exceeds 2000ms"
+    condition: "http_request_duration_p95{service='ai-server'} > 2000"
+    severity: warning
+    for: 5m
+    notify: [slack-warning]
+
+  - name: ai-server-emotion-errors
+    description: "Emotion detection error rate exceeds 10%"
+    condition: "endpoint_error_rate{service='ai-server',endpoint='/emotion'} > 0.1"
+    severity: warning
+    for: 5m
+    notify: [slack-warning]
+
+  # ── Infrastructure Alerts ──────────────────────────────────────────────────
+  - name: cloud-run-cpu-high
+    description: "Cloud Run instance CPU utilisation > 80%"
+    condition: "cloud_run_cpu_utilization > 0.8"
+    severity: warning
+    for: 10m
+    notify: [slack-warning]
+
+  - name: cloud-run-memory-high
+    description: "Cloud Run instance memory utilisation > 85%"
+    condition: "cloud_run_memory_utilization > 0.85"
+    severity: critical
+    for: 5m
+    notify: [pagerduty, slack-critical]
+
+notifications:
+  slack-critical:
+    channel: "#signspeak-alerts-critical"
+  slack-warning:
+    channel: "#signspeak-alerts"
+  pagerduty:
+    service_key: "${PAGERDUTY_SERVICE_KEY}"

@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  # ── Token Server ────────────────────────────────────────────────────────────
+  token-server:
+    build:
+      context: .
+      dockerfile: token_server/Dockerfile
+    container_name: signspeak_token_server
+    ports:
+      - "8080:8080"
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/serviceAccountKey.json
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-signspeak-20dff}
+      AGORA_APP_ID: ${AGORA_APP_ID:-}
+      AGORA_APP_CERTIFICATE: ${AGORA_APP_CERTIFICATE:-}
+      TOKEN_TTL_SECONDS: ${TOKEN_TTL_SECONDS:-3600}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FLASK_DEBUG: ${FLASK_DEBUG:-false}
+    volumes:
+      - ./config/serviceAccountKey.json:/secrets/serviceAccountKey.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── AI Server ───────────────────────────────────────────────────────────────
+  ai-server:
+    build:
+      context: .
+      dockerfile: ai_server/Dockerfile
+    container_name: signspeak_ai_server
+    ports:
+      - "8081:8081"
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/serviceAccountKey.json
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-signspeak-20dff}
+      FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-signspeak-20dff.appspot.com}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FLASK_DEBUG: ${FLASK_DEBUG:-false}
+      EMOTION_BACKEND: ${EMOTION_BACKEND:-opencv}
+      TTS_USE_GTTS: ${TTS_USE_GTTS:-false}
+      TTS_GTTS_LANG: ${TTS_GTTS_LANG:-en}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+    volumes:
+      - ./config/serviceAccountKey.json:/secrets/serviceAccountKey.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  default:
+    name: signspeak_network
