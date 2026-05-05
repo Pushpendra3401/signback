@@ -19,11 +19,11 @@ numpy>=1.26.0
 
 # Explicitly pin transitive dependencies to resolve "resolution-too-deep"
 # These versions are known to be compatible across Firebase, MediaPipe, and TensorFlow
-protobuf>=4.25.0,<5.0.0
-grpcio>=1.60.0,<1.70.0
-grpcio-status>=1.60.0,<1.70.0
-google-api-core>=2.15.0,<3.0.0
-googleapis-common-protos>=1.60.0,<2.0.0
+protobuf==4.25.3
+grpcio==1.62.2
+grpcio-status==1.62.2
+google-api-core==2.18.0
+googleapis-common-protos==1.63.0
 
 # Text-to-Speech
 pyttsx3>=2.90
