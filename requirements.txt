@@ -13,9 +13,17 @@ google-cloud-firestore>=2.16.0
 mediapipe>=0.10.14
 opencv-python-headless>=4.10.0
 deepface>=0.0.93
-tf-keras>=2.16.0               # required by deepface
-# Loosen numpy to allow the resolver to find a compatible version for Python 3.13
+tf-keras>=2.16.0
+# Loosen numpy to allow the resolver to find a compatible version for Python 3.11
 numpy>=1.26.0
+
+# Explicitly pin transitive dependencies to resolve "resolution-too-deep"
+# These versions are known to be compatible across Firebase, MediaPipe, and TensorFlow
+protobuf>=4.25.0,<5.0.0
+grpcio>=1.60.0,<1.70.0
+grpcio-status>=1.60.0,<1.70.0
+google-api-core>=2.15.0,<3.0.0
+googleapis-common-protos>=1.60.0,<2.0.0
 
 # Text-to-Speech
 pyttsx3>=2.90
