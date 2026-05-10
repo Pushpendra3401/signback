@@ -131,6 +131,93 @@ def ready():
     return jsonify({"ready": True})
 
 
+@app.route("/auth/signup", methods=["POST"])
+def auth_signup():
+    """
+    Sign up a new user using Firebase Admin SDK.
+    Body: { "name": "...", "email": "...", "password": "..." }
+    """
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()
+    email = str(data.get("email", "")).strip()
+    password = str(data.get("password", "")).strip()
+
+    if not email or not password:
+        abort(400, "Email and password are required.")
+
+    try:
+        user = auth.create_user(
+            email=email,
+            password=password,
+            display_name=name
+        )
+        return jsonify({
+            "token": "MOCK_TOKEN_PLEASE_USE_FIREBASE_CLIENT_SDK_FOR_REAL_AUTH",
+            "user": {
+                "id": user.uid,
+                "name": user.display_name or name,
+                "email": user.email
+            }
+        })
+    except Exception as exc:
+        logger.error("Signup failed: %s", exc)
+        return jsonify({"message": str(exc)}), 400
+
+
+@app.route("/auth/login", methods=["POST"])
+def auth_login():
+    """
+    Log in a user. 
+    """
+    data = request.get_json(silent=True) or {}
+    email = str(data.get("email", "")).strip()
+    password = str(data.get("password", "")).strip()
+
+    if not email or not password:
+        abort(400, "Email and password are required.")
+    
+    try:
+        user = auth.get_user_by_email(email)
+        return jsonify({
+            "token": "MOCK_TOKEN_PLEASE_USE_FIREBASE_CLIENT_SDK_FOR_REAL_AUTH",
+            "user": {
+                "id": user.uid,
+                "name": user.display_name or "User",
+                "email": user.email
+            }
+        })
+    except Exception as exc:
+        logger.error("Login failed: %s", exc)
+        return jsonify({"message": "Invalid email or password"}), 401
+
+
+@app.route("/auth/profile", methods=["GET"])
+def auth_profile():
+    """Get the profile of the authenticated user."""
+    uid = _require_auth()
+    try:
+        user = auth.get_user(uid)
+        return jsonify({
+            "id": user.uid,
+            "name": user.display_name or "User",
+            "email": user.email,
+            "profilePic": user.photo_url
+        })
+    except Exception as exc:
+        abort(500, f"Failed to fetch profile: {exc}")
+
+
+@app.route("/auth/logout", methods=["POST"])
+def auth_logout():
+    """Revoke refresh tokens for the user."""
+    uid = _require_auth()
+    try:
+        auth.revoke_refresh_tokens(uid)
+        return jsonify({"status": "logged out"})
+    except Exception as exc:
+        abort(500, f"Logout failed: {exc}")
+
+
 # ── /translate ─────────────────────────────────────────────────────────────────
 @app.route("/translate", methods=["POST"])
 def translate():
