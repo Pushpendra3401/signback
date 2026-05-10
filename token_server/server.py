@@ -9,9 +9,11 @@ import logging
 import os
 import sys
 import time
+import requests
 
 from flask import Flask, abort, jsonify, request, g
 from flask_cors import CORS
+from firebase_admin import auth, firestore
 from auth_middleware import require_auth
 from firestore_client import FirestoreClient
 
@@ -189,6 +191,7 @@ def _generate_agora_token(channel_id: str, uid_str: str, role_str: str, ttl: int
 
     return {
         "token": agora_token,
+        "appId": app_id,
         "role": role_str,
         "expiresIn": ttl,
         "expiresAt": expire_ts,
@@ -373,6 +376,109 @@ def register_fcm_token():
 
     firestore_client.register_fcm_token(g.user_id, fcm_token)
     return jsonify({"status": "registered"})
+
+
+@app.route("/auth/signup", methods=["POST"])
+def auth_signup():
+    """
+    Sign up a new user using Firebase Admin SDK.
+    Body: { "name": "...", "email": "...", "password": "..." }
+    """
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()
+    email = str(data.get("email", "")).strip()
+    password = str(data.get("password", "")).strip()
+
+    if not email or not password:
+        abort(400, "Email and password are required.")
+
+    try:
+        user = auth.create_user(
+            email=email,
+            password=password,
+            display_name=name
+        )
+        
+        # In a real app, you might want to generate a custom token or 
+        # return the user info. For now, we'll return the uid.
+        # Note: Frontend expects { "token": "...", "user": { "id": "...", "name": "...", "email": "..." } }
+        
+        # For a real signup to work with the current frontend, we need an ID token.
+        # Since Admin SDK can't give us an ID token for a password, we'll return a placeholder
+        # and explain to the user.
+        return jsonify({
+            "token": "MOCK_TOKEN_PLEASE_USE_FIREBASE_CLIENT_SDK_FOR_REAL_AUTH",
+            "user": {
+                "id": user.uid,
+                "name": user.display_name or name,
+                "email": user.email
+            }
+        })
+    except Exception as exc:
+        logger.error("Signup failed: %s", exc)
+        return jsonify({"message": str(exc)}), 400
+
+
+@app.route("/auth/login", methods=["POST"])
+def auth_login():
+    """
+    Log in a user. 
+    Note: Firebase Admin SDK does not support password validation.
+    This route normally requires the Firebase Auth REST API and a Web API Key.
+    """
+    data = request.get_json(silent=True) or {}
+    email = str(data.get("email", "")).strip()
+    password = str(data.get("password", "")).strip()
+
+    if not email or not password:
+        abort(400, "Email and password are required.")
+
+    # This is a MOCK implementation because Admin SDK cannot verify passwords.
+    # In production, you would use:
+    # https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=[API_KEY]
+    
+    try:
+        user = auth.get_user_by_email(email)
+        # We can't verify password here with Admin SDK!
+        # Returning mock success for demonstration if user exists.
+        return jsonify({
+            "token": "MOCK_TOKEN_PLEASE_USE_FIREBASE_CLIENT_SDK_FOR_REAL_AUTH",
+            "user": {
+                "id": user.uid,
+                "name": user.display_name or "User",
+                "email": user.email
+            }
+        })
+    except Exception as exc:
+        logger.error("Login failed: %s", exc)
+        return jsonify({"message": "Invalid email or password"}), 401
+
+
+@app.route("/auth/profile", methods=["GET"])
+@require_auth
+def auth_profile():
+    """Get the profile of the authenticated user."""
+    try:
+        user = auth.get_user(g.user_id)
+        return jsonify({
+            "id": user.uid,
+            "name": user.display_name or "User",
+            "email": user.email,
+            "profilePic": user.photo_url
+        })
+    except Exception as exc:
+        abort(500, f"Failed to fetch profile: {exc}")
+
+
+@app.route("/auth/logout", methods=["POST"])
+@require_auth
+def auth_logout():
+    """Revoke refresh tokens for the user."""
+    try:
+        auth.revoke_refresh_tokens(g.user_id)
+        return jsonify({"status": "logged out"})
+    except Exception as exc:
+        abort(500, f"Logout failed: {exc}")
 
 
 # ── Run Server ──────────────────────────────────────
